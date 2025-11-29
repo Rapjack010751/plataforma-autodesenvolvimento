@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { 
   Sparkles, 
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2,
-  Target,
   TrendingUp,
   Heart,
   BookOpen,
@@ -27,17 +25,6 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    // Verificar se usuário está autenticado
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/');
-      }
-    };
-    checkAuth();
-  }, [router]);
 
   const questions = [
     {
@@ -160,32 +147,15 @@ export default function QuizPage() {
     }
   };
 
-  const handleFinish = async () => {
+  const handleFinish = () => {
     setLoading(true);
     
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Salvar respostas do quiz no perfil do usuário
-        const { error } = await supabase.auth.updateUser({
-          data: {
-            quiz_completed: true,
-            quiz_answers: answers,
-            onboarding_completed_at: new Date().toISOString(),
-          }
-        });
-
-        if (error) throw error;
-      }
-      
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Erro ao salvar quiz:', error);
-      router.push('/dashboard');
-    } finally {
-      setLoading(false);
-    }
+    // Salvar respostas no localStorage
+    localStorage.setItem('lifepath_quiz_answers', JSON.stringify(answers));
+    localStorage.setItem('lifepath_quiz_completed', 'true');
+    
+    // Redirecionar para o dashboard
+    router.push('/dashboard');
   };
 
   const getCurrentAnswer = () => {

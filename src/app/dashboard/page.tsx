@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { 
   Target, 
   TrendingUp, 
@@ -18,17 +17,22 @@ import {
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const [userName, setUserName] = useState('Usuário');
+  const [quizAnswers, setQuizAnswers] = useState<any>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-  }, []);
+    // Carregar dados do localStorage
+    const answers = localStorage.getItem('lifepath_quiz_answers');
+    if (answers) {
+      setQuizAnswers(JSON.parse(answers));
+    }
 
-  const userName = user?.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
+    // Buscar nome do usuário (pode adicionar um campo no quiz depois)
+    const savedName = localStorage.getItem('lifepath_user_name');
+    if (savedName) {
+      setUserName(savedName);
+    }
+  }, []);
 
   return (
     <div className="space-y-8">
