@@ -1,9 +1,11 @@
 {
-  "name": "template",
+  "name": "lifepath",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:3001": "next dev --turbopack -p 3001",
+    "dev:3002": "next dev --turbopack -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
