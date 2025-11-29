@@ -36,9 +36,13 @@ export default function Home() {
         if (error) throw error;
         router.push('/dashboard');
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { data, error } = await signUp(email, password, fullName);
         if (error) throw error;
-        setError('Cadastro realizado! Verifique seu email para confirmar.');
+        
+        // Redirecionar para o quiz após cadastro bem-sucedido
+        if (data.user) {
+          router.push('/quiz');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao processar solicitação');
@@ -166,11 +170,7 @@ export default function Home() {
                   </div>
 
                   {error && (
-                    <div className={`p-4 rounded-xl text-sm ${
-                      error.includes('realizado') 
-                        ? 'bg-green-50 text-green-700 border border-green-200' 
-                        : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}>
+                    <div className="p-4 rounded-xl text-sm bg-red-50 text-red-700 border border-red-200">
                       {error}
                     </div>
                   )}
