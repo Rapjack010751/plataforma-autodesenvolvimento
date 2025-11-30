@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { 
   Target, 
   TrendingUp, 
@@ -17,244 +18,161 @@ import {
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const [userName, setUserName] = useState('Usuário');
-  const [quizAnswers, setQuizAnswers] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Verificar se está no navegador
-    if (typeof window !== 'undefined') {
-      try {
-        // Carregar dados do localStorage
-        const answers = localStorage.getItem('lifepath_quiz_answers');
-        if (answers) {
-          const parsedAnswers = JSON.parse(answers);
-          setQuizAnswers(parsedAnswers);
-          
-          // Extrair nome do sonho se existir
-          const dreamAnswer = parsedAnswers.find((a: any) => a.question === 'dream_goal');
-          if (dreamAnswer && dreamAnswer.answer) {
-            setUserName('Sonhador');
-          }
-        }
-
-        // Buscar nome do usuário
-        const savedName = localStorage.getItem('lifepath_user_name');
-        if (savedName) {
-          setUserName(savedName);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-600">Carregando seu painel...</p>
-        </div>
-      </div>
-    );
-  }
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-8 text-white shadow-xl">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl md:text-4xl font-bold">
-                Olá, {userName}! 👋
-              </h1>
-              <p className="text-purple-100 text-lg">
-                Bem-vindo ao seu painel de desenvolvimento pessoal
-              </p>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-3xl p-8 text-white">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-4xl font-bold">
+              Olá, {userName}! 👋
+            </h1>
+            <p className="text-purple-100 text-lg">
+              Bem-vindo ao seu painel de desenvolvimento pessoal
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-semibold">Nível Iniciante</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          icon={<Target className="w-6 h-6" />}
+          title="Objetivos Ativos"
+          value="0"
+          subtitle="Comece definindo suas metas"
+          color="purple"
+        />
+        <StatCard
+          icon={<BookOpen className="w-6 h-6" />}
+          title="Aprendizados"
+          value="0"
+          subtitle="Nenhuma habilidade em progresso"
+          color="blue"
+        />
+        <StatCard
+          icon={<Heart className="w-6 h-6" />}
+          title="Sonhos"
+          value="0"
+          subtitle="Cadastre seus sonhos"
+          color="pink"
+        />
+        <StatCard
+          icon={<Wallet className="w-6 h-6" />}
+          title="Economia"
+          value="R$ 0"
+          subtitle="Controle suas finanças"
+          color="green"
+        />
+      </div>
+
+      {/* Suggestions Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg">
+              <Sparkles className="w-6 h-6 text-purple-600" />
             </div>
-            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <Sparkles className="w-5 h-5" />
-              <span className="font-semibold">Nível Iniciante</span>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Sugestões Personalizadas</h2>
+              <p className="text-sm text-gray-600">Recomendações para seu desenvolvimento</p>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            icon={<Target className="w-6 h-6" />}
-            title="Objetivos Ativos"
-            value="0"
-            subtitle="Comece definindo suas metas"
+        <div className="space-y-4">
+          <SuggestionCard
+            title="Defina seu primeiro objetivo"
+            description="Comece sua jornada definindo um objetivo claro em qualquer área da sua vida"
+            action="Criar Objetivo"
+            href="/dashboard/goals"
+            icon={<Target className="w-5 h-5" />}
             color="purple"
           />
-          <StatCard
-            icon={<BookOpen className="w-6 h-6" />}
-            title="Aprendizados"
-            value="0"
-            subtitle="Nenhuma habilidade em progresso"
+          <SuggestionCard
+            title="Aprenda algo novo"
+            description="Escolha uma habilidade que você sempre quis aprender e crie um plano de estudos"
+            action="Explorar"
+            href="/dashboard/learning"
+            icon={<BookOpen className="w-5 h-5" />}
             color="blue"
           />
-          <StatCard
-            icon={<Heart className="w-6 h-6" />}
-            title="Sonhos"
-            value="0"
-            subtitle="Cadastre seus sonhos"
+          <SuggestionCard
+            title="Cadastre seus sonhos"
+            description="Liste seus sonhos e receba sugestões de como alcançá-los passo a passo"
+            action="Adicionar Sonho"
+            href="/dashboard/dreams"
+            icon={<Heart className="w-5 h-5" />}
             color="pink"
           />
-          <StatCard
-            icon={<Wallet className="w-6 h-6" />}
-            title="Economia"
-            value="R$ 0"
-            subtitle="Controle suas finanças"
+          <SuggestionCard
+            title="Organize suas finanças"
+            description="Controle seus gastos e receba dicas para economizar e realizar seus objetivos"
+            action="Começar"
+            href="/dashboard/finances"
+            icon={<Wallet className="w-5 h-5" />}
             color="green"
           />
         </div>
+      </div>
 
-        {/* Suggestions Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Sugestões Personalizadas</h2>
-                <p className="text-sm text-gray-600">Recomendações para seu desenvolvimento</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <SuggestionCard
-              title="Defina seu primeiro objetivo"
-              description="Comece sua jornada definindo um objetivo claro em qualquer área da sua vida"
-              action="Criar Objetivo"
-              icon={<Target className="w-5 h-5" />}
-              color="purple"
-            />
-            <SuggestionCard
-              title="Aprenda algo novo"
-              description="Escolha uma habilidade que você sempre quis aprender e crie um plano de estudos"
-              action="Explorar"
-              icon={<BookOpen className="w-5 h-5" />}
-              color="blue"
-            />
-            <SuggestionCard
-              title="Cadastre seus sonhos"
-              description="Liste seus sonhos e receba sugestões de como alcançá-los passo a passo"
-              action="Adicionar Sonho"
-              icon={<Heart className="w-5 h-5" />}
-              color="pink"
-            />
-            <SuggestionCard
-              title="Organize suas finanças"
-              description="Controle seus gastos e receba dicas para economizar e realizar seus objetivos"
-              action="Começar"
-              icon={<Wallet className="w-5 h-5" />}
-              color="green"
-            />
-          </div>
+      {/* Areas de Desenvolvimento */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Áreas de Desenvolvimento</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AreaCard
+            title="Profissional"
+            description="Carreira, habilidades e networking"
+            icon="💼"
+            progress={0}
+          />
+          <AreaCard
+            title="Financeiro"
+            description="Controle, economia e investimentos"
+            icon="💰"
+            progress={0}
+          />
+          <AreaCard
+            title="Físico"
+            description="Saúde, exercícios e bem-estar"
+            icon="💪"
+            progress={0}
+          />
+          <AreaCard
+            title="Espiritual"
+            description="Propósito, meditação e fé"
+            icon="🙏"
+            progress={0}
+          />
+          <AreaCard
+            title="Relacionamentos"
+            description="Família, amigos e conexões"
+            icon="❤️"
+            progress={0}
+          />
+          <AreaCard
+            title="Aprendizado"
+            description="Conhecimento e novas habilidades"
+            icon="📚"
+            progress={0}
+          />
         </div>
-
-        {/* Areas de Desenvolvimento */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Áreas de Desenvolvimento</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AreaCard
-              title="Profissional"
-              description="Carreira, habilidades e networking"
-              icon="💼"
-              progress={0}
-            />
-            <AreaCard
-              title="Financeiro"
-              description="Controle, economia e investimentos"
-              icon="💰"
-              progress={0}
-            />
-            <AreaCard
-              title="Físico"
-              description="Saúde, exercícios e bem-estar"
-              icon="💪"
-              progress={0}
-            />
-            <AreaCard
-              title="Espiritual"
-              description="Propósito, meditação e fé"
-              icon="🙏"
-              progress={0}
-            />
-            <AreaCard
-              title="Relacionamentos"
-              description="Família, amigos e conexões"
-              icon="❤️"
-              progress={0}
-            />
-            <AreaCard
-              title="Aprendizado"
-              description="Conhecimento e novas habilidades"
-              icon="📚"
-              progress={0}
-            />
-          </div>
-        </div>
-
-        {/* Quiz Info */}
-        {quizAnswers && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <CheckCircle2 className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Perfil Personalizado Ativo
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Suas respostas do quiz estão sendo usadas para personalizar suas sugestões e recomendações.
-                </p>
-                <Link
-                  href="/quiz"
-                  className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Refazer quiz
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* CTA to Quiz if not completed */}
-        {!quizAnswers && (
-          <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 border border-purple-200">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-purple-200 rounded-xl">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Personalize sua experiência
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Responda nosso quiz rápido para receber sugestões personalizadas baseadas em seus objetivos e interesses.
-                </p>
-                <Link
-                  href="/quiz"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
-                >
-                  Fazer quiz agora
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -296,12 +214,14 @@ function SuggestionCard({
   title,
   description,
   action,
+  href,
   icon,
   color
 }: {
   title: string;
   description: string;
   action: string;
+  href: string;
   icon: React.ReactNode;
   color: string;
 }) {
@@ -323,13 +243,13 @@ function SuggestionCard({
           <p className="text-sm text-gray-600">{description}</p>
         </div>
       </div>
-      <button
-        onClick={() => alert('Funcionalidade em desenvolvimento! Em breve você poderá ' + action.toLowerCase())}
+      <Link
+        href={href}
         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all font-medium text-sm text-gray-700 hover:text-purple-600 whitespace-nowrap ml-4"
       >
         {action}
         <ArrowRight className="w-4 h-4" />
-      </button>
+      </Link>
     </div>
   );
 }
@@ -346,7 +266,7 @@ function AreaCard({
   progress: number;
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all">
       <div className="text-4xl mb-4">{icon}</div>
       <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 mb-4">{description}</p>

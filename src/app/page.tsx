@@ -1,13 +1,54 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase, signIn, signUp } from '@/lib/supabase';
 import { Sparkles, Target, TrendingUp, Heart, BookOpen, Wallet, Calendar } from 'lucide-react';
 
 export default function Home() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleStartQuiz = () => {
-    router.push('/quiz');
+  useEffect(() => {
+    // Verificar se usuário já está logado
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/dashboard');
+      }
+    };
+    checkUser();
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+        router.push('/dashboard');
+      } else {
+        const { data, error } = await signUp(email, password, fullName);
+        if (error) throw error;
+        
+        // Redirecionar para o quiz após cadastro bem-sucedido
+        if (data.user) {
+          router.push('/quiz');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao processar solicitação');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,47 +110,90 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Side - CTA */}
+          {/* Right Side - Auth Form */}
           <div className="flex justify-center lg:justify-end">
             <div className="w-full max-w-md">
               <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-6">
                 <div className="text-center space-y-2">
                   <h2 className="text-3xl font-bold text-gray-900">
-                    Comece sua jornada
+                    {isLogin ? 'Bem-vindo de volta!' : 'Comece sua jornada'}
                   </h2>
                   <p className="text-gray-600">
-                    Responda algumas perguntas para personalizarmos sua experiência
+                    {isLogin ? 'Entre para continuar seu desenvolvimento' : 'Crie sua conta gratuitamente'}
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <button
-                    onClick={handleStartQuiz}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300"
-                  >
-                    Começar Agora
-                  </button>
-                  
-                  <div className="text-center text-sm text-gray-500">
-                    Sem cadastro necessário • Totalmente gratuito
-                  </div>
-                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {!isLogin && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nome Completo
+                      </label>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        placeholder="Seu nome"
+                        required={!isLogin}
+                      />
+                    </div>
+                  )}
 
-                <div className="pt-6 border-t border-gray-200">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span>Personalize sua experiência</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span>Receba sugestões inteligentes</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span>Acompanhe seu progresso</span>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      placeholder="seu@email.com"
+                      required
+                    />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Senha
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="p-4 rounded-xl text-sm bg-red-50 text-red-700 border border-red-200">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Processando...' : isLogin ? 'Entrar' : 'Criar Conta'}
+                  </button>
+                </form>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setError('');
+                    }}
+                    className="text-purple-600 hover:text-purple-700 font-medium transition-colors"
+                  >
+                    {isLogin ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
+                  </button>
                 </div>
               </div>
             </div>
